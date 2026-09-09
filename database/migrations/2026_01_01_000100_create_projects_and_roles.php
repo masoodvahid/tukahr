@@ -27,8 +27,7 @@ return new class extends Migration
             $table->unsignedBigInteger('assigned_by')->nullable();
 
             // MySQL does not support partial unique indexes. Generated columns
-            // expose only the active assignment values; UNIQUE indexes can then
-            // enforce the business rules while allowing multiple NULL values.
+            // expose only active values, and UNIQUE indexes enforce the rules.
             $table->unsignedBigInteger('active_assignment_user_id')
                 ->storedAs('CASE WHEN ended_at IS NULL THEN user_id ELSE NULL END');
             $table->unsignedBigInteger('active_manager_project_id')
@@ -43,7 +42,9 @@ return new class extends Migration
             $table->unique('active_singleton_role', 'uq_active_singleton_role');
             $table->index(['role_code', 'project_id', 'ended_at']);
 
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            // Keep historical assignments intact: users/projects are deactivated
+            // instead of cascading deletion through payroll authorization history.
+            $table->foreign('user_id')->references('id')->on('users')->restrictOnDelete();
             $table->foreign('project_id')->references('id')->on('projects')->restrictOnDelete();
             $table->foreign('assigned_by')->references('id')->on('users')->nullOnDelete();
         });
