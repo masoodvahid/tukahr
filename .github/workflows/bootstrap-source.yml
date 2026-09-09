@@ -5,7 +5,6 @@ on:
   push:
     branches: [develop]
     paths:
-      - '.bootstrap/**'
       - '.github/workflows/bootstrap-source.yml'
 
 permissions:
@@ -20,6 +19,7 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Reconstruct source archive
         shell: bash
@@ -28,14 +28,14 @@ jobs:
           cat .bootstrap/chunk-* | base64 -d > /tmp/tukahr-source.tar.xz
           test "$(wc -c < /tmp/tukahr-source.tar.xz)" -eq 29464
           tar -xJf /tmp/tukahr-source.tar.xz
+          rm -f .github/workflows/ci.yml
 
-      - name: Commit real project source
+      - name: Commit application source
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .bootstrap .github/workflows/bootstrap-source.yml
           git config user.name "TukaHR Builder"
           git config user.email "actions@users.noreply.github.com"
-          git add -A
+          git add app artisan bootstrap composer.json config database package.json phpunit.xml public resources routes tests vite.config.js .env.example .gitignore README.md SECURITY.md
           git commit -m "feat: implement TukaHR payroll workflow"
-          git push origin HEAD:develop
+          git push origin develop
